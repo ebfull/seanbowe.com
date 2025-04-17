@@ -7,10 +7,64 @@ compile_sass = true
 # Whether to build a search index to be used later on by a JavaScript library
 build_search_index = false
 
+[markdown.math]
+engine = "typst"
+
 [markdown]
+
 # Whether to do syntax highlighting
 # Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
 highlight_code = true
+highlight_theme = "one-dark"
+#highlight_theme = "ayu-dark"
+#highlight_theme = "nyx-bold"
+#highlight_theme = "gruvbox-dark"
+
+
+    # 1337
+    # agola-dark
+    # ascetic-white
+    # axar
+    # ayu-dark
+    # ayu-light
+    # ayu-mirage
+    # base16-atelierdune-light
+    # base16-ocean-dark
+    # base16-ocean-light
+    # bbedit
+    # boron
+    # charcoal
+    # cheerfully-light
+    # classic-modified
+    # demain
+    # dimmed-fluid
+    # dracula
+    # gray-matter-dark
+    # green
+    # gruvbox-dark
+    # gruvbox-light
+    # idle
+    # inspired-github
+    # ir-white
+    # kronuz
+    # material-dark
+    # material-light
+    # monokai
+    # nord
+    # nyx-bold
+    # one-dark
+    # OneHalfDark
+    # OneHalfLight
+    # railsbase16-green-screen-dark
+    # solarized-dark
+    # solarized-light
+    # subway-madrid
+    # subway-moscow
+    # Tomorrow
+    # two-dark
+    # visual-studio-dark
+    # zenburn
+
 
 [extra]
 # Put all your custom variables here

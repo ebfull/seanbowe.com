@@ -7,7 +7,7 @@
 :root {
   --bg-color: #ffffff;
   --text-color: #000000;
-  --highlight-color: #a0ceff;
+  --highlight-color: #daecff;
 }
 
 [data-theme="dark"] {
@@ -22,6 +22,10 @@
 
   a {
     color: #1E90FF;
+  }
+
+  .typst-inline, #swxyz, #ragucircuit {
+    filter: invert(1);
   }
 }
 
@@ -128,6 +132,7 @@ main {
   }
 
   section {
+    overflow: auto;
     padding-bottom: 20px;
 
     .subtitle {
@@ -232,7 +237,7 @@ main {
   span {
     font-style: italic;
     color: gray;
-    margin-left: 10px;
+    margin-right: 10px;
   }
 }
 
@@ -270,7 +275,6 @@ main {
   background-color: var(--bg-color);
   border-top: 1px solid var(--text-color);
   z-index: 999;
-  height: 60px;
 
   .footer-container {
     width: 90%;
@@ -280,7 +284,8 @@ main {
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    justify-content: space-between
+    justify-content: space-between;
+    height: 40px;
   }
 
   .dark-mode-toggle {
@@ -291,4 +296,76 @@ main {
     background: none;
     color: var(--text-color);
   }
+}
+
+pre {
+  padding: 1rem;
+  overflow: auto;
+}
+/* The line numbers already provide some kind of left/right padding */
+pre[data-linenos] {
+  padding: 1rem 0;
+}
+pre table td {
+  padding: 0;
+}
+/* The line number cells */
+pre table td:nth-of-type(1) {
+  text-align: center;
+  vertical-align: top;
+  user-select: none;
+}
+pre mark {
+  /* If you want your highlights to take the full width */
+  display: block;
+  /* The default background colour of a mark is bright yellow */
+  background-color: rgba(254, 252, 232, 0.9);
+}
+pre table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+blockquote {
+  border-left: 4px solid var(--text-color);
+  padding: 0.5rem 1rem;
+  margin: 0;
+  font-style: italic;
+  background-color: var(--highlight-color);
+  line-height: 30px;
+
+  img {
+    height: 32px;
+    width: 32px;
+    vertical-align: top;
+  }
+}
+
+p,h1,h2,h3,h4,h5,li {
+  code {
+    background-color: var(--highlight-color);
+    padding: 2px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    line-height: 10px;
+  }
+}
+
+h6 {
+  .zola-anchor {
+    display: none;
+  }
+  align-items: center;
+  img {
+    display: block;
+    margin: auto;
+  }
+}
+
+h6#swxyz img {
+  width: 100%;
+}
+
+h6#ragucircuit img {
+  width: 100%;
 }
