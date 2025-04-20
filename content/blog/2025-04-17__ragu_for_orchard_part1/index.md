@@ -129,7 +129,7 @@ The `D::W` associated type represents an abstract wire type. All you can do is c
 
 However, the most important benefit of this abstraction is for dealing with evaluation of non-uniform circuit polynomials.[^11] Briefly, `ragu` internally uses a 4-variate polynomial $s(W, X, Y, Z)$ to describe all of the circuits in the PCD tree.
 
-###### ![](/swxyz.png "s(W, X, Y, Z)") { #swxyz }
+###### ![](swxyz.png "s(W, X, Y, Z)") { #swxyz }
 
 We do not store this entire polynomial in memory because it would be absolutely humongous. We only ever need to evaluate a _restricted_ form of this polynomial (with zero or one free variables) so it's easier, simpler and more efficient to evaluate the polynomial as part of circuit synthesis itself.
 
@@ -163,7 +163,7 @@ The `add` and `enforce_zero` methods, in contrast, only invoke their closure whe
 
 The `Circuit<F>` trait that you're more familiar with if you've used `halo2` or `bellman` essentially consists of a single method called `synthesize` that creates all of the constraints and the witness data (if applicable) given a `ConstraintSystem<F>`. The `ragu` crate uses a much more generalized dataflow to deal with edge cases that this API design cannot easily handle. The circuit consists of three methods: `input`, `main` and `output` which work as follows:
 
-###### ![](/ragucircuit.png "Diagram of the components of the Ragu Circuit") { #ragucircuit }
+###### ![](ragucircuit.png "Diagram of the components of the Ragu Circuit") { #ragucircuit }
 
 This arrangement splits out some of the logic that took place solely in the old `synthesize` method. As you can see from the diagram, the verification path through the circuit code starts from a circuit-defined instance type that is fed into the `input` method, and rather than used by the `main` method is directly fed into the `output` method to obtain the public input. In proving, the path starts as a witness that goes through the `main` method and takes the same route through the `output` method to synthesize the same public inputs, ensuring the same logic that is used to generate and relate public inputs between the circuit and outside code reuses the same code paths and abstractions.
 
