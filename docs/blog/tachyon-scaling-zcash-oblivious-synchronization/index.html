@@ -26,7 +26,9 @@
   <h1 class="title">
     Tachyon: Scaling Zcash with Oblivious Synchronization
   </h1>
-  <p class="subtitle"><strong>2025-04-02</strong> by Sean Bowe</p>
+  <p class="subtitle"><strong>2025-04-02</strong><span class="left"> by Sean Bowe</span>
+    
+  </p>
   <div class="section-frame">
     <p>Zcash’s shielded transactions offer the strongest privacy guarantees of any distributed financial network today. They provide a cryptographic property we call “ledger indistinguishability,” which delivers strong on-chain confidentiality — far beyond what’s achievable with decoys or cover traffic that only partially masks transaction details. In short, <strong>shielded transactions resemble random gibberish paired with a proof that it actually represents a valid payment.</strong></p>
 <p>To enable this, Zcash pioneered the use of <a href="https://en.wikipedia.org/wiki/Zero-knowledge_proof">zero-knowledge proofs</a> — a technique that allows the network to verify transactions without revealing their private contents. These proofs are called “zero-knowledge” because they reveal <em>nothing</em> about the transaction’s internals. But the cryptographic techniques behind this — particularly the proofs we use called <a href="https://z.cash/learn/what-are-zk-snarks/">zk-SNARKs</a> — are also powerful tools for building scalable decentralized systems. Their power lies not just in the zero-knowledge property itself (which is often unused in practice), but in their ability to succinctly prove the correctness of large computations.</p>
