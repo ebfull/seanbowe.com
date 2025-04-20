@@ -8,12 +8,18 @@
   --bg-color: #ffffff;
   --text-color: #000000;
   --highlight-color: #daecff;
+
+  --dim-table-color-1: #f1f2ff;
+  --dim-table-color-2: #fff0f0;
 }
 
 [data-theme="dark"] {
   --bg-color: #191919;
   --text-color: #E0E0E0;
   --highlight-color: #3a3a3a;
+
+  --dim-table-color-1: #1d2022;
+  --dim-table-color-2: #161616;
 
   .social-links img,
   .logo {
@@ -132,6 +138,7 @@ main {
   }
 
   section {
+    width: 100%;
     overflow: auto;
     padding-bottom: 20px;
 
@@ -144,6 +151,7 @@ main {
         font-size: 0.6em;
         color: var(--text-color);
         float: right;
+        margin-right: 10px;
       }
     }
 
@@ -240,10 +248,38 @@ main {
 }
 
 .post-list {
-  span {
-    font-style: italic;
-    color: gray;
-    margin-right: 10px;
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  li:nth-child(odd) {
+    background-color: var(--dim-table-color-1);
+  }
+
+  li:nth-child(even) {
+    background-color: var(--dim-table-color-2);
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 12px;
+    gap: 1rem;
+
+    a {
+      flex: 1;
+      word-break: break-word;
+    }
+
+    span {
+      white-space: nowrap;
+      margin-left: auto;
+      color: gray;
+      font-style: italic;
+    }
   }
 }
 

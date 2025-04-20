@@ -12,7 +12,7 @@
 
             <ul>
             {% for post in posts %}
-                <li><span>{{ post.date }}</span><a href="{{ post.path }}">{{ post.title }}</a></li>
+                <li><div class="row"><a href="{{ post.path }}">{{ post.title }}</a><span>{{ post.date }}</span></div></li>
             {% endfor %}
             </ul>
         {% endfor %}
