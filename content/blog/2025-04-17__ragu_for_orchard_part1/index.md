@@ -103,7 +103,7 @@ let b = D::with(|| {
 
 Here, `witness`, `proof_id[i].value()`, `y` and `z` are all `Maybe`-types and yet there is no need to handle the runtime possibility of them being absent. **This is a zero-cost abstraction.** The code looks like it's working directly with the values because that's what it's _actually doing_ at runtime.
 
-There are many other situations where this new abstraction can enable convenient circuit synthesis code. As an example, if you have a `Vec<M>` where `M: Maybe<T>` then _when the driver doesn't need a witness_ the value `M` is a zero-sized type and so `Vec<M>` never allocates at runtime; otherwise, it's the _exact same_ as a `Vec<T>`. This also means that you can borrow a `Maybe<&[T]>` from a `&[Maybe<T>]` without any overhead or `unsafe` code.[^9] These things are not possible in existing Rust SNARK toolkits which have to pay for the pointless memory layout consequences at runtime.
+There are many other situations where this new abstraction can enable convenient circuit synthesis code. As an example, if you have a `Vec<M>` where `M: Maybe<T>` then _when the driver doesn't need a witness_ the value `M` is a zero-sized type and so `Vec<M>` never allocates at runtime; otherwise, it's the _exact same_ as a `Vec<T>`. This also means that you can borrow a `Maybe<&[T]>` from a `&[Maybe<T>]` without any overhead or `unsafe` code.[^8] These things are not possible in existing Rust SNARK toolkits which have to pay for the pointless memory layout consequences at runtime.
 
 ### `Driver`
 
@@ -129,7 +129,7 @@ The `D::W` associated type represents an abstract wire type. All you can do is c
 * **During verification of a non-succinct witness:** The wire represents the value of the witness (a field element) read directly from the proof.
 * **During the computation of public inputs:** As we'll see later, it becomes far simpler if the circuit code can reconstruct the public inputs (as the circuit intends to interpret them) if the circuit code that constructs the public input during verification is _the same_ as the code that does so within the circuit itself. In this case, the wire value is also just a value because we only care about the public input values and none of the interstitial values used to compute it.
 
-However, the most important benefit of this abstraction is for dealing with evaluation of non-uniform circuit polynomials.[^10] Briefly, `ragu` internally uses a 4-variate polynomial $s(W, X, Y, Z)$ to describe all of the circuits in the PCD tree.
+However, the most important benefit of this abstraction is for dealing with evaluation of non-uniform circuit polynomials.[^9] Briefly, `ragu` internally uses a 4-variate polynomial $s(W, X, Y, Z)$ to describe all of the circuits in the PCD tree.
 
 ###### ![](swxyz.png "s(W, X, Y, Z)") { #swxyz }
 
@@ -218,6 +218,5 @@ That's it for now. **As always, if you're interested in this kind of work, pleas
 [^5]: This essentially works by combining all of your circuits into a giant multivariate interpolation polynomial and evaluating over different restrictions of the polynomial depending on the context, which means the circuit needs to evaluated in its polynomial representation even more often than the witness itself.
 [^6]: There are exceptions for things like division by zero, which still must be handled with errors, but this happens very rarely.
 [^7]: Inherent methods get precedence over trait methods, which is why `Option<T>` never has this problem but we do.
-[^8]: If the closure were actually compiled it would result in a compile-time error because we panic in an inline `const` block in a _generic_ context, which waits until after monomorphization and dead-code elimination passes to invoke `const` expressions.
-[^9]: It is even possible to transmute a `Vec<M>` into a rebound `Maybe<Vec<T>>` with `unsafe` code.
-[^10]: Although this is technically an artifact of the specific proof system we're currently using, something very similar happens inside of [HyperNova](https://eprint.iacr.org/2023/573) for almost identical reasons, so we'll likely want to accomodate this while exploring this territory of the API design.
+[^8]: It is even possible to transmute a `Vec<M>` into a rebound `Maybe<Vec<T>>` with `unsafe` code.
+[^9]: Although this is technically an artifact of the specific proof system we're currently using, something very similar happens inside of [HyperNova](https://eprint.iacr.org/2023/573) for almost identical reasons, so we'll likely want to accomodate this while exploring this territory of the API design.
