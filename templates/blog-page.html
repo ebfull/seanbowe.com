@@ -8,7 +8,11 @@
   <h1 class="title">
     {{ page.title }}
   </h1>
-  <p class="subtitle"><strong>{{ page.date }}</strong> by {{page.authors | join(sep=", ")}}</p>
+  <p class="subtitle"><strong>{{ page.date }}</strong><span class="left"> by {{page.authors | join(sep=", ")}}</span>
+    {% if page.extra.page_history %}
+        <span class="edithistory"><a href="{{ page.extra.page_history_url }}">[post history]</a></span>
+    {% endif %}
+  </p>
   <div class="section-frame">
     {{ page.content | safe }}
   </div>

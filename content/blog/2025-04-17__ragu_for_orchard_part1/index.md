@@ -1,6 +1,10 @@
 +++
 title = "Ragu for Orchard: Recursion Al Dente"
 authors = ["Sean Bowe"]
+
+[extra]
+page_history = true
+page_history_url = "https://github.com/ebfull/seanbowe.com/commits/master/content/blog/2025-04-17__ragu_for_orchard_part1/"
 +++
 
 > ![](/warning-technical.png "Technical Audience") This blog post is intended for a technical audience. Reader discretion is advised.
@@ -33,7 +37,7 @@ The first optimization and ergonomic improvement in `ragu` comes from the use of
 2. The failure case of an unexpected missing witness needs to be handled: either we `panic!` at runtime (a bad idea here!) or we could bubble it up as an error to the driver. This requires every code path that potentially touches witness data to propagate an error, even though only very few codepaths actually result in _any_ error during synthesis.[^6] Once you start dealing with iterators, multi-threaded synthesis optimizations, embedded witness generation logic, etc. it gets obnoxious to write code full of pointless error handling cases that should be prevented at compile-time.
 3. It's best to avoid leveraging `Option<T>`'s monadic operators outside of limited areas of the API, since it will require the compiler to codegen these operations even in contexts where they're _never_ invoked; the compiler cannot optimize any of this away in dead-code elimination passes because it's using a runtime `enum` discriminant to conditionally invoke functions. This is unfortunate because it's very convenient to invoke these operators on infallible morphisms.
 
-The `ragu` crate introduces a higher-kinded abstraction called `Maybe<T>` which is a generalization of an `Option<T>` except that it's a kind of indexed monad: the _concrete_ type of a `Maybe<T>` is either represented by an `Always(T)` type that transparently wraps `T` or a zero-sized `Empty` type that mimics `()`. In other words, it is an opaque generalization over the _variant_ of an `Option` rather than the type.[^7]
+The `ragu` crate introduces a higher-kinded abstraction called `Maybe<T>` which is a generalization of an `Option<T>` except that it's a kind of “indexed” monad: the _concrete_ type of a `Maybe<T>` is either represented by an `Always(T)` type that transparently wraps `T` or a zero-sized `Empty` type that mimics `()`. In other words, it is an opaque generalization over the _variant_ of an `Option` rather than the type.[^7]
 
 The trait looks something like this, from a user's perspective:
 
@@ -45,7 +49,10 @@ pub trait MaybeKind {
 pub trait Maybe<T> {
     type Kind: MaybeKind;
 
-    fn just<F: FnOnce() -> T>(f: F) -> Self;
+    fn just<R>(f: impl FnOnce() -> R) -> <Self::Kind as MaybeKind>::Rebind<R>;
+    fn with<R>(
+        f: impl FnOnce() -> Result<R, super::Error>,
+    ) -> Result<<Self::Kind as MaybeKind>::Rebind<R>, super::Error>;
     fn take(self) -> T;
     fn map<U, F>(self, f: F) -> <Self::Kind as MaybeKind>::Rebind<U>
     where
@@ -61,13 +68,14 @@ pub trait Maybe<T> {
 
 The full API is a limited form of the `Option<T>` API with some methods that I'll highlight:
 
-* `Maybe<T>::just` can be used to create a `Maybe<T>`, but if the backing store is `Empty` then the provided closure is not called and _cannot_ not survive dead-code elimination. The concrete type is zero-sized and after compiler optimizations it consumes _no_ memory when the driver doesn't need witness values.
-* `Maybe<T>::take` can be used to obtain the content within, which is a simple no-op move if the backing store is `Always(T)`, but if the backing store is `Empty` then this fails at _compile-time_. You should only call `take` in contexts where the API guarantees the backing store is `Always(T)` as I'll discuss later.
+* `Maybe<T>::just` can be used to create a `Maybe<T>` using the provided closure if the backing store is `Always`, and ignoring the provided closure if it's `Empty`. In the `Empty` case not only is the closure not called but it _cannot_ survive dead code elimination and the resulting `Empty` is zero-sized, consuming no memory.
+* `Maybe<T>::with` is similar to `Maybe<T>::just` except it propagates any failure that might emerge in the provided closure, which can happen during circuit synthesis for reasons other than a missing witness.
+* `Maybe<T>::take` can be used to obtain the content within, which is a simple no-op move if the backing store is `Always(T)`, but if the backing store is `Empty` then this fails at _compile-time_. **You should only call `take` in contexts where the API guarantees the backing store is `Always(T)`** as I'll discuss later.
 * `Maybe<T>::map` (and its friends like `and_then`) work like you'd expect. If the backing store is `Empty` they are no-ops and their closures also _must_ be eliminated by the compiler, otherwise the operation is _always_ applied and does not accomodate a failure case. There's a little higher-kinded type glue but it's hidden from the user.
-* `Maybe<T>::view` works kind of like `Option<T>::as_ref` except that `as_ref` is defined for `&T` so `view` avoids the ambiguity.[^8] I also have a `view_mut` method that comes in handy.
+* `Maybe<T>::view` works kind of like `Option<T>::as_ref` except that `as_ref` is defined for `&T` so `view` avoids the ambiguity.[^7] I also have a `view_mut` method that comes in handy.
 * `Maybe<T>::snag` is a convenience method that is useful for avoiding moves when necessary.
 
-None of these methods are fallible and yet they can be used to deal with a large amount of witness generation logic in practice. In the contexts where errors do need to be handled, or in places where many monadic operators need to be applied, the underlying driver `D` provides a `D::with` method that takes a closure like this:
+In order to assist readability and mitigate issues with Rust's type inference rules the underlying generic driver `D` provides `D::with` and `D::just` methods that proxy to the backing `Maybe<T>`'s methods, but otherwise, everything behaves and looks like you're dealing with an infallible `Option<T>` type. Witness generation code that might trigger an error looks like this:
 
 ```rust
 let b = D::with(|| {
@@ -93,9 +101,9 @@ let b = D::with(|| {
 });
 ```
 
-Here, `witness`, `proof_id[i].value()`, `y` and `z` are all `Maybe`-types and yet there is no need to handle the runtime possibility of them being absent. The code looks like it's working directly with the values because that's what it's _actually doing_: if the driver doesn't need a witness, the closure is not even compiled and none of the inner calls to `.take()` or `.snag()` are compiled either, which is essential to making this work.[^9]
+Here, `witness`, `proof_id[i].value()`, `y` and `z` are all `Maybe`-types and yet there is no need to handle the runtime possibility of them being absent. **This is a zero-cost abstraction.** The code looks like it's working directly with the values because that's what it's _actually doing_ at runtime.
 
-There are _many_ situations where this new abstraction can enable extremely convenient circuit synthesis code. As an example, if you have a `Vec<M>` where `M: Maybe<T>` then _when the driver doesn't need a witness_ the value `M` is a zero-sized type and so `Vec<M>` never allocates at runtime; otherwise, it's the _exact same_ as a `Vec<T>`. This also means that you can borrow a `Maybe<&[T]>` from a `&[Maybe<T>]` without any overhead or `unsafe` code.[^10] These things are not possible in existing Rust SNARK toolkits which have to pay for the pointless memory layout consequences at runtime.
+There are many other situations where this new abstraction can enable convenient circuit synthesis code. As an example, if you have a `Vec<M>` where `M: Maybe<T>` then _when the driver doesn't need a witness_ the value `M` is a zero-sized type and so `Vec<M>` never allocates at runtime; otherwise, it's the _exact same_ as a `Vec<T>`. This also means that you can borrow a `Maybe<&[T]>` from a `&[Maybe<T>]` without any overhead or `unsafe` code.[^9] These things are not possible in existing Rust SNARK toolkits which have to pay for the pointless memory layout consequences at runtime.
 
 ### `Driver`
 
@@ -106,28 +114,22 @@ pub trait Driver {
     type F: Field;
     type W: Clone;
     const ONE: Self::W;
-
     type MaybeKind: maybe::MaybeKind;
-
-    fn with<R>(
-        f: impl FnOnce() -> Result<R, SynthesisError>,
-    ) -> Result<Witness<Self, R>, SynthesisError>;
+    type IO: Sink<Self, Self::W>;
 }
 
 pub type Witness<D, T> = <<D as Driver>::MaybeKind as maybe::MaybeKind>::Rebind<T>;
 ```
 
-The `Driver::with` method is the one I spoke about before, and the `MaybeKind` associated type is part of the glue used to make the `Maybe<T>` type work seamlessly when rebinding using operators like `map`, `or_else` and so on. The `Witness<D, T>` type alias exists as a way to easily name the concrete type that implements `Maybe<T>` throughout synthesis.
+The `Driver` is defined for a concrete driver that supports a specific field `F` but the trait itself is not generic over one, unlike `ConstraintSystem<F>`. This emerges naturally and results in fewer generics scattered around; just use `D::F` to refer to the field instead of `F` in cases where the type system hasn't unified it with another type you already know about. (I've written a lot of different gadgets with this API and I can assure you this is much better.)
 
-**The more interesting changes are the introduction of the `F` and `W` associated types.** The `Driver` is defined for a concrete driver that supports a specific field `F` but the trait itself is not generic over one, unlike `ConstraintSystem<F>`. This emerges naturally and results in fewer generics scattered around; just use `D::F` to refer to the field instead of `F` in cases where the type system hasn't unified it with another type you already know about. (I've written a lot of different gadgets with this API and I can assure you this is much better.)
-
-The `D::W` associated type represents an abstract wire type. All you can do is clone it. In other SNARK toolkits when you ask the backend to allocate a variable (or wire) in your constraint system it will return a concrete wire type that internally points to a specific part of the witness for later use by the backend. This usually works just fine, but in our case we have drivers with various different needs for what this wire value should actually represent.
+The `D::W` associated type represents an abstract wire type. All you can do is clone it. In other Rust SNARK toolkits when you ask the backend to allocate a variable (or wire) in your constraint system it will return a concrete wire type that internally points to a specific part of the witness for later use by the backend. This usually works just fine, but in our case we have drivers with various different needs for what this wire value should actually represent.
 
 * **During proof generation:** The wire represents a position in the witness just like in other toolkits.
 * **During verification of a non-succinct witness:** The wire represents the value of the witness (a field element) read directly from the proof.
 * **During the computation of public inputs:** As we'll see later, it becomes far simpler if the circuit code can reconstruct the public inputs (as the circuit intends to interpret them) if the circuit code that constructs the public input during verification is _the same_ as the code that does so within the circuit itself. In this case, the wire value is also just a value because we only care about the public input values and none of the interstitial values used to compute it.
 
-However, the most important benefit of this abstraction is for dealing with evaluation of non-uniform circuit polynomials.[^11] Briefly, `ragu` internally uses a 4-variate polynomial $s(W, X, Y, Z)$ to describe all of the circuits in the PCD tree.
+However, the most important benefit of this abstraction is for dealing with evaluation of non-uniform circuit polynomials.[^10] Briefly, `ragu` internally uses a 4-variate polynomial $s(W, X, Y, Z)$ to describe all of the circuits in the PCD tree.
 
 ###### ![](swxyz.png "s(W, X, Y, Z)") { #swxyz }
 
@@ -172,30 +174,30 @@ There are further advantages to this more complicated arrangement. The core prov
 Here's the `Circuit` trait in all its glory:
 
 ```rust
-pub trait Circuit<F: Field> {
+pub trait Circuit<F: Field>: Sized {
     type Instance<'instance>;
-    type IO<D: Driver<F = F>>;
+    type IO<'source, D: Driver<F = F>>;
     type Witness<'witness>;
-    type Aux;
+    type Aux<'witness>;
 
     fn input<'instance, D: Driver<F = F>>(
         &self,
         dr: &mut D,
         input: Witness<D, Self::Instance<'instance>>,
-    ) -> Result<Self::IO<D>, SynthesisError>;
+    ) -> Result<Self::IO<'instance, D>, Error>;
 
     fn main<'witness, D: Driver<F = F>>(
         &self,
         dr: &mut D,
         witness: Witness<D, Self::Witness<'witness>>,
-    ) -> Result<(Self::IO<D>, Witness<D, Self::Aux>), SynthesisError>;
+    ) -> Result<(Self::IO<'witness, D>, Witness<D, Self::Aux<'witness>>), Error>;
 
-    fn output<D: Driver<F = F>>(
+    fn output<'source, D: Driver<F = F>>(
         &self,
         dr: &mut D,
-        io: Self::IO<D>,
+        io: Self::IO<'source, D>,
         output: &mut D::IO,
-    ) -> Result<(), SynthesisError>;
+    ) -> Result<(), Error>;
 }
 ```
 
@@ -215,8 +217,7 @@ That's it for now. **As always, if you're interested in this kind of work, pleas
 [^4]: Writing circuits in R1CS comes with the added advantage that many modern tools used to automatically discover soundness and completeness bugs in constraint systems can be directly applied to our codebase.
 [^5]: This essentially works by combining all of your circuits into a giant multivariate interpolation polynomial and evaluating over different restrictions of the polynomial depending on the context, which means the circuit needs to evaluated in its polynomial representation even more often than the witness itself.
 [^6]: There are exceptions for things like division by zero, which still must be handled with errors, but this happens very rarely.
-[^7]: Technically, the backing store is a `struct Always<T>(T);` or a `struct Empty;` which provides an equivalent zero-cost abstraction in both cases, but this is strictly an implementation detail.
-[^8]: Inherent methods get precedence over trait methods, which is why `Option<T>` never has this problem but we do.
-[^9]: If the closure were actually compiled it would result in a compile-time error because we panic in an inline `const` block in a _generic_ context, which waits until after monomorphization and dead-code elimination passes to invoke `const` expressions.
-[^10]: It is even possible to transmute a `Vec<M>` into a rebound `Maybe<Vec<T>>` with `unsafe` code.
-[^11]: Although this is technically an artifact of the specific proof system we're currently using, something very similar happens inside of [HyperNova](https://eprint.iacr.org/2023/573) for almost identical reasons, so we'll likely want to accomodate this while exploring this territory of the API design.
+[^7]: Inherent methods get precedence over trait methods, which is why `Option<T>` never has this problem but we do.
+[^8]: If the closure were actually compiled it would result in a compile-time error because we panic in an inline `const` block in a _generic_ context, which waits until after monomorphization and dead-code elimination passes to invoke `const` expressions.
+[^9]: It is even possible to transmute a `Vec<M>` into a rebound `Maybe<Vec<T>>` with `unsafe` code.
+[^10]: Although this is technically an artifact of the specific proof system we're currently using, something very similar happens inside of [HyperNova](https://eprint.iacr.org/2023/573) for almost identical reasons, so we'll likely want to accomodate this while exploring this territory of the API design.
