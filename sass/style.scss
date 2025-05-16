@@ -23,16 +23,24 @@
 
   .social-links img,
   .logo {
-    filter: invert(1);
+    filter: invert(0.9);
   }
 
   a {
     color: #1E90FF;
   }
 
-  .typst-inline, #swxyz, #ragucircuit {
-    filter: invert(1);
+  .typst-inline, #swxyz, #ragucircuit, #orchardbundle, #tachyaction, #tachygrams, #tachyon_keys {
+    filter: invert(0.9);
   }
+  .typst-display {
+    filter: invert(0.9);
+  }
+}
+
+.typst-display {
+  display: block;
+  margin: 0 auto;
 }
 
 a {
@@ -160,6 +168,10 @@ main {
       font-size: 32px;
       padding-bottom: 5px;
     }
+  }
+
+  .section-frame.justified {
+    text-align: justify;
   }
 
   .section-frame {
@@ -410,4 +422,30 @@ h6#swxyz img {
 
 h6#ragucircuit img {
   width: 100%;
+}
+
+h6#orchard_vs_tachyon {
+  img {
+    width: 359px;
+    height: 346px;
+  }
+  margin: auto;
+}
+
+h6#tachyaction {
+  img {
+    width: 100%;
+  }
+}
+
+h6#tachygrams {
+  img {
+    width: 100%;
+  }
+}
+
+h6#tachyon_keys {
+  img {
+    width: 100%;
+  }
 }

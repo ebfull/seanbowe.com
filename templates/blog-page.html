@@ -13,7 +13,7 @@
         <span class="edithistory"><a href="{{ page.extra.page_history_url }}">[post history]</a></span>
     {% endif %}
   </p>
-  <div class="section-frame">
+  <div class="section-frame{% if page.extra.page_justification %} justified{% endif %}">
     {{ page.content | safe }}
   </div>
 </section>
