@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zcash and Quantum Computers - sean bowe</title>
+  <link rel="stylesheet" href="https://seanbowe.com/fonts.css?h=1b03c81b0cb01a171c3d">
+  <link rel="stylesheet" href="https://seanbowe.com/style.css?h=7ef877f0249ed817c930">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/">
+        <div class="logo"></div>
+      </a>
+      <nav>
+        <a href="/" class="nav-button ">about</a>
+        <a href="/blog/" class="nav-button active">blog</a>
+      </nav>
+    </header>
+  </div>
+  <div class="container">
+    <main>
+        
+<section>
+  <h1 class="title">
+    Zcash and Quantum Computers
+  </h1>
+  <p class="subtitle"><strong>2025-10-16</strong><span class="left"> by Sean Bowe</span>
+    
+  </p>
+  <div class="section-frame justified">
+    <p>Zcash’s protocol designers and cryptographers differ about how <em>soon</em> quantum computers will become a real threat, but we broadly agree that preparing for their potential impact on user privacy and security is crucial. This careful attitude has existed since the project's inception: we have always anticipated future cryptographic breakthroughs—quantum or otherwise—and worked to compartmentalize the parts of our protocol that rely on vulnerable assumptions. As an extreme example of our attention to detail, <a href="https://zips.z.cash/zip-0212">ZIP 212</a> identified and fixed an issue where a (possibly even <em>non</em>-quantum) adversary that could break zk-SNARK soundness would have had the ability to compromise privacy in a somewhat contrived situation. As mentioned in the ZIP, <strong>"we have attempted to avoid any instance in the protocol where privacy (even against interactive attacks) depended on strong cryptographic assumptions"</strong> and we have been cognizant of these threats throughout our project's history.</p>
+<p><strong>Thanks to this careful protocol design, Zcash’s shielded transactions already achieve post-quantum privacy in many common cases.</strong><sup class="footnote-reference"><a href="#paymentaddr">1</a></sup> Notably, quantum adversaries cannot compromise on-chain <em>anonymity</em> whatsoever.<sup class="footnote-reference"><a href="#anonymity">2</a></sup> This advantage stems from Zcash’s use of zero-knowledge proofs, (perfectly) hiding commitment schemes, blinded signing keys, and strong symmetric primitives used in various parts of our cryptography. <strong>Despite this, we have never claimed to have post-quantum privacy because the contexts in which these guarantees hold are not intuitive to users.</strong> We would much rather wait until we have perfected the situation to avoid misleading our users.</p>
+<p>As part of our ongoing work to scale Zcash with <a href="https://seanbowe.com/blog/tachyon-scaling-zcash-oblivious-synchronization/">Project Tachyon</a>, we plan to remove <a href="https://seanbowe.com/blog/tachyon-scaling-zcash-oblivious-synchronization/#shielded-notes-and-commitments">in-band secret distribution</a> from Tachyon transactions to <strong>fully defend against all quantum attacks on privacy</strong> in on-chain transactions. This step is essential, because <a href="https://en.wikipedia.org/wiki/Harvest_now,_decrypt_later">harvest now, decrypt later</a> threats are perilous for blockchain protocols.</p>
+<h2 id="soundness"><a class="zola-anchor" href="#soundness" aria-label="Anchor link for: soundness">🔗</a>Soundness</h2>
+<p>The remaining concern about quantum computers in our protocol’s shielded components arises from the potential vulnerability of <a href="https://en.wikipedia.org/wiki/Elliptic-curve_cryptography">elliptic curve cryptography</a>. These cryptographic breakthroughs would put the <em>soundness</em> of our protocol in jeopardy, which would possibly allow counterfeiting or (somewhat equivalently) theft of user funds, though not necessarily pose a risk to user privacy. <strong>Our users are currently protected under the same cryptographic assumptions that almost every other cryptocurrency relies on.</strong><sup class="footnote-reference"><a href="#pairings">3</a></sup></p>
+<p>Although we must make every effort to improve the <em>privacy</em> guarantees of our protocol in the face of quantum adversaries, soundness breaks are less of a priority because of our ability to adapt and react to quantum developments.<sup class="footnote-reference"><a href="#priorities">4</a></sup> There is a huge opportunity cost for changing our protocol to <em>fully</em> defend against future quantum computers.<sup class="footnote-reference"><a href="#opportunity_cost">5</a></sup> In my view, there are many risks for our project's survival that are more imminent.<sup class="footnote-reference"><a href="#other_risks">6</a></sup></p>
+<p><strong>However, we <em>can</em> minimize the tail risk.</strong> In other cryptocurrencies there is a burgeoning study of quantum robustness techniques that would allow funds to be immune to quantum adversaries (under plausible assumptions) if the community flipped a switch to replace or augment spending conditions with stricter post-quantum tests.<sup class="footnote-reference"><a href="#pqb">7</a></sup> Protocol designers at the <a href="https://electriccoin.co/">Electric Coin Company</a> have spent some time over the last year developing techniques in Zcash's shielded transactions (specifically, for Orchard) for what is referred to as <em>quantum recoverability</em>. <strong>After a change to the way wallets work, likely to be integrated over the next year, if quantum computers <em>do</em> suddenly appear then users can safely recover their funds through a special mechanism that prevents quantum adversaries from stealing funds.</strong> This mechanism would also protect user privacy.</p>
+<p>There are other improvements in the pipeline. For one thing, the design of Tachyon inherits many of the philosophies that make this proposed recovery protocol possible. And a general purpose <em>long-term storage protocol</em> that allows users to fortify their (cold storage) funds is being considered for those who are concerned about quantum computers or bugs in our cryptography more generally. Finally, we've worked hard to ensure that our dependence on pre-quantum cryptographic assumptions is isolated to primitives that <em>can</em> be replaced with quantum-resistant technology in the future.</p>
+<h2 id="today-s-best-practices"><a class="zola-anchor" href="#today-s-best-practices" aria-label="Anchor link for: today-s-best-practices">🔗</a>Today's Best Practices</h2>
+<p><strong>The best practice for protecting your shielded funds from a quantum apocalypse is to just shield your coins and await upcoming improvements to the software.</strong> Even after the aforementioned changes, the main <em>soundness</em> threat from quantum computers remains the ability for adversaries to counterfeit shielded coins, and while Zcash's cryptographers will stay ahead of developments to protect users, <strong>the final defense remains <a href="https://z.cash/turnstile-enforcement-against-counterfeiting/">turnstiles.</a></strong></p>
+<hr />
+<div class="footnote-definition" id="paymentaddr"><sup class="footnote-definition-label">1</sup>
+<p>Unless a quantum adversary also has your payment address, Zcash's shielded transactions are <strong>completely indistinguishable</strong> on-chain.</p>
+</div>
+<div class="footnote-definition" id="anonymity"><sup class="footnote-definition-label">2</sup>
+<p>In other privacy-focused blockchains (like Monero) the so-called "key images" are not post-quantum hiding, and so the transaction graph is <a href="https://ccs.getmonero.org/proposals/research-post-quantum-monero.html">completely transparent to a quantum adversary</a>. Zcash's nullifiers (an equivalent concept) are constructed using strong cryptography like <a href="https://en.wikipedia.org/wiki/Pseudorandom_function_family">keyed PRFs</a> that are not vulnerable to quantum computers.</p>
+</div>
+<div class="footnote-definition" id="pairings"><sup class="footnote-definition-label">3</sup>
+<p>Zcash's latest shielded protocol (Orchard) does not use pairing-friendly elliptic curves, and so we are less vulnerable to breakthroughs in that kind of cryptography.</p>
+</div>
+<div class="footnote-definition" id="priorities"><sup class="footnote-definition-label">4</sup>
+<p>Quantum privacy breaks are usually retroactive, whereas soundness breaks are usually not.</p>
+</div>
+<div class="footnote-definition" id="opportunity_cost"><sup class="footnote-definition-label">5</sup>
+<p>The post-quantum cryptography that we need in Zcash—recursive zk-SNARKs, signature schemes and possibly more—will result in large transactions and may cause disruptive changes in things like hardware wallets. Prematurely adopting this bleeding-edge cryptography may slow adoption of shielded transactions, put our project at odds with emerging standards, lock us into inefficient technology that is likely to be obsolete in the next few years, or expose us to risks involving understudied cryptographic assumptions.</p>
+</div>
+<div class="footnote-definition" id="other_risks"><sup class="footnote-definition-label">6</sup>
+<p>Our protocol needs users, it needs to scale, it needs sustainable development and investment, it needs decentralization, and it must achieve all of this <em>very soon</em> while the regulatory environment is still tolerable.</p>
+</div>
+<div class="footnote-definition" id="pqb"><sup class="footnote-definition-label">7</sup>
+<p>See <a href="https://eprint.iacr.org/2025/1307.pdf">eprint.iacr.org/2025/1307</a> and related discussions.</p>
+</div>
+
+  </div>
+</section>
+
+    </main>
+  </div>
+  <div class="footer-wrapper">
+    <div class="footer-container">
+      <div class="footer-text"></div>
+      <footer>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()">(test)</button>
+      </footer>
+    </div>
+  </div>
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+    }
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    function applyPreferredTheme() {
+      const userPreference = getCookie('theme');
+      if (userPreference) {
+        setTheme(userPreference);
+      } else {
+        const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        setTheme(systemPreference);
+      }
+    }
+    function toggleDarkMode() {
+      const currentTheme = document.body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+      updateDarkModeToggleText(newTheme);
+    }
+    function updateDarkModeToggleText(theme) {
+      const toggleButton = document.querySelector('.dark-mode-toggle');
+      toggleButton.textContent = theme === 'dark' ? 'too dark' : 'too bright';
+    }
+    function toggleExtraPapers() {
+      const extraPapers = document.getElementById('extra-papers');
+      const expandButton = document.getElementById('expand-papers');
+      if (extraPapers.style.display === 'none') {
+        extraPapers.style.display = 'block';
+        expandButton.style.display = 'none';
+      }
+    }
+    applyPreferredTheme();
+    updateDarkModeToggleText(document.body.getAttribute('data-theme'));
+  </script>
+</body>
+</html>
