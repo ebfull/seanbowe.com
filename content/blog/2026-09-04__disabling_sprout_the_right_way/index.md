@@ -53,8 +53,7 @@ vote makes this clear:
 Some want to destroy the Sprout pool funds permanently, others
 want to recycle the funds for future mining rewards, and yet more insist the funds
 should live in the pool indefinitely, until they're claimed by their rightful owners or stolen by
-a quantum attacker or other hack. The only real way to decide the fate of these funds
-is through community sentiment gathering.
+a quantum attacker or other hack.
 
 I can see why folks in the latter category are concerned about the pool being
 disabled before a clear plan is established, as it appears to be a loss by default.
