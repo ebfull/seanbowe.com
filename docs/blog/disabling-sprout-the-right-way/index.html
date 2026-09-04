@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disabling Sprout the Right Way - sean bowe</title>
+  <link rel="stylesheet" href="https://seanbowe.com/fonts.css?h=1b03c81b0cb01a171c3d">
+  <link rel="stylesheet" href="https://seanbowe.com/style.css?h=7ef877f0249ed817c930">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/">
+        <div class="logo"></div>
+      </a>
+      <nav>
+        <a href="/" class="nav-button ">about</a>
+        <a href="/blog/" class="nav-button active">blog</a>
+      </nav>
+    </header>
+  </div>
+  <div class="container">
+    <main>
+        
+<section>
+  <h1 class="title">
+    Disabling Sprout the Right Way
+  </h1>
+  <p class="subtitle"><strong>2026-09-04</strong><span class="left"> by Sean Bowe</span>
+    
+  </p>
+  <div class="section-frame">
+    <p>One of the five questions being asked as part of <a href="https://forum.zcashcommunity.com/t/nu7-coinholder-vote/56912">sentiment gathering</a> for
+Zcash's upcoming NU7 upgrade concerns the deprecation of <em>Sprout</em>, the original zk-SNARK protocol
+that launched with Zcash back in 2016:</p>
+<blockquote>
+<p><strong>When should v4 transactions be disabled?</strong></p>
+<ol>
+<li>Immediately at NU7 activation.</li>
+<li>One year after this poll concludes.</li>
+<li>Do not set a date to disable v4 transactions.</li>
+<li>Abstain.</li>
+</ol>
+</blockquote>
+<p>Transactions involving the Sprout shielded pool can only occur in the old
+<code>v4</code> transaction format, so disabling <code>v4</code> transactions as part of a network upgrade
+will effectively suspend the Sprout pool indefinitely.</p>
+<p><strong>This is a long time coming.</strong> Sprout is already deprecated; we long since disabled
+transfers into the pool (<a href="https://zips.z.cash/zip-0211">ZIP 211</a>) due to the <a href="https://electriccoin.co/blog/zcash-counterfeiting-vulnerability-successfully-remediated/">famous discovery</a>
+of an undetectable counterfeiting vulnerability back in 2018, which I
+played a part in remediating. And hardly any funds remain in it: <a href="https://cipherscan.app/pools">~22,600 ZEC</a> at the time of this writing.</p>
+<p>Protocol engineers throughout Zcash, including myself, want us to get rid of this
+thing. It is pure technical debt and poses a needless security risk for the project.
+Earlier this year, an <em>exploitable</em> Sprout counterfeiting bug <a href="https://shieldedlabs.net/zcash-vulnerability-successfully-remediated/">was identified and fixed</a>.
+And just yesterday, a non-exploitable <a href="https://github.com/ZcashFoundation/zebra/issues/11386">bug</a> in Zebra was discovered that
+similarly revealed Sprout's fragile, aging attack surface.</p>
+<p>Keeping the pool around has other risks. It is still possible, theoretically, to
+make payments <em>within</em> the Sprout pool, even though no wallets support it. This
+contradicts how Orchard was <a href="https://tachyon.z.cash/blog/auditing-orchard-supply/#the-new-approach">recently deprecated</a>
+in NU6.3: payments were made impossible so that (hypothetically counterfeit)
+coins were forced to travel through a turnstile, allowing us to
+establish a coherent definition of circulating supply. Due to technical limitations,
+enforcing the same thing in Sprout without changing its circuit is tricky.</p>
+<h3 id="what-happens-to-the-funds"><a class="zola-anchor" href="#what-happens-to-the-funds" aria-label="Anchor link for: what-happens-to-the-funds">🔗</a>What happens to the funds?</h3>
+<p>The question of disabling <code>v4</code> transactions and suspending Sprout is, on its surface,
+completely orthogonal to what happens to Sprout user funds. The coinholder
+vote makes this clear:</p>
+<blockquote>
+<p>The disposition of the affected funds is out of scope for this poll and is not specified here.</p>
+</blockquote>
+<p>Some want to destroy the Sprout pool funds permanently, others
+want to recycle the funds for future mining rewards, and yet more insist the funds
+should live in the pool indefinitely, until they're claimed by their rightful owners or stolen by
+a quantum attacker or other hack. The only real way to decide the fate of these funds
+is through community sentiment gathering.</p>
+<p>I can see why folks in the latter category are concerned about the pool being
+disabled before a clear plan is established, as it appears to be a loss by default.</p>
+<p>But it turns out that disabling <code>v4</code> transactions works for everyone involved!</p>
+<h3 id="sprout-recovery-protocol"><a class="zola-anchor" href="#sprout-recovery-protocol" aria-label="Anchor link for: sprout-recovery-protocol">🔗</a>Sprout Recovery Protocol</h3>
+<p>In future network upgrades, to accommodate Tachyon and other kinds of improvements
+for Zcash, we'll likely be using some kind of
+extensible transaction format (such as <a href="https://zips.z.cash/zip-0248">ZIP248</a>, proposed by <a href="https://zodl.com/">ZODL</a>)
+that is designed to reduce wallet breakage at major network upgrade boundaries. The
+technical details don't matter much here; what's important is that Sprout would
+ideally interoperate with this new format instead, to reduce technical debt.</p>
+<p>Of course, we also want to disable payments within the pool, for the reason
+I mentioned before, and we definitely don't want to maintain Sprout's cryptography
+forever either.</p>
+<p>My suggestion works like this:</p>
+<ul>
+<li>Disable <code>v4</code> transactions in a network upgrade. (My preference is for NU7.)</li>
+<li>Once this happens, its commitment tree (and thus all spendable note commitments,
+and thus the number of nullifiers that can be revealed) is frozen.</li>
+<li>Instead of making funds spendable via a shielded protocol, like today, we
+replace it with a <strong>recovery protocol</strong> that lives in the new extensible
+transaction format. Due to the nature of that format, wallets do not need to care
+how these Sprout-related components work.</li>
+<li>Any funds extracted through this recovery protocol go through the turnstile as
+normal; the draft ZIP 248 transaction format actually makes the turnstile a
+first-class component of the transaction format itself.</li>
+</ul>
+<p>The recovery protocol is simpler, which is part of what makes this elegant:
+it only requires a zk-SNARK proving knowledge of a small number of SHA256
+preimages. It does not require us to maintain the existing Merkle tree either; nodes
+can immediately purge that tree and its roots (anchors) from their state databases
+after <code>v4</code> transactions are disabled. The recovery protocol can use its own Merkle
+tree or some other accumulator instead, for performance.</p>
+<p>Interestingly, this makes it a limited kind of <em>quantum</em> recovery
+protocol, due to the heavy use of SHA256 in the original Sprout design. Something
+like this for Sapling would not be quantum recoverable. And so regardless of what
+the community decides we should do with <code>v4</code> transactions, we
+need to start a conversation about <a href="https://forum.zcashcommunity.com/t/sapling-withdraw-only-discussion-kickoff/55223">deprecating Sapling as well.</a></p>
+<h3 id="community-sentiment"><a class="zola-anchor" href="#community-sentiment" aria-label="Anchor link for: community-sentiment">🔗</a>Community Sentiment</h3>
+<p>How do you feel about this plan? It's important to stress that disabling <code>v4</code>
+does not mean we've made a decision about what happens with the coins; the polling
+makes this explicit. But it may be a prerequisite even for the folks who want to keep
+Sprout funds spendable indefinitely.</p>
+<p>Ultimately, deciding what should happen with the Sprout pool funds is not up to
+me, and we'll need to have more voting and debate about it in the coming months.
+But I'm increasingly convinced that the store-of-value case for Zcash requires
+us to make these funds recoverable for as long as possible, and <strong>I will be
+advocating for the recovery protocol path going forward.</strong></p>
+
+  </div>
+</section>
+
+    </main>
+  </div>
+  <div class="footer-wrapper">
+    <div class="footer-container">
+      <div class="footer-text"></div>
+      <footer>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()">(test)</button>
+      </footer>
+    </div>
+  </div>
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+    }
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    function applyPreferredTheme() {
+      const userPreference = getCookie('theme');
+      if (userPreference) {
+        setTheme(userPreference);
+      } else {
+        const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        setTheme(systemPreference);
+      }
+    }
+    function toggleDarkMode() {
+      const currentTheme = document.body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+      updateDarkModeToggleText(newTheme);
+    }
+    function updateDarkModeToggleText(theme) {
+      const toggleButton = document.querySelector('.dark-mode-toggle');
+      toggleButton.textContent = theme === 'dark' ? 'too dark' : 'too bright';
+    }
+    function toggleExtraPapers() {
+      const extraPapers = document.getElementById('extra-papers');
+      const expandButton = document.getElementById('expand-papers');
+      if (extraPapers.style.display === 'none') {
+        extraPapers.style.display = 'block';
+        expandButton.style.display = 'none';
+      }
+    }
+    applyPreferredTheme();
+    updateDarkModeToggleText(document.body.getAttribute('data-theme'));
+  </script>
+</body>
+</html>
