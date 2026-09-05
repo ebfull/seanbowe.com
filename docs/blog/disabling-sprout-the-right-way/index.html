@@ -28,10 +28,12 @@
   </h1>
   <p class="subtitle"><strong>2026-09-04</strong><span class="left"> by Sean Bowe</span>
     
+        <span class="edithistory"><a href="https:&#x2F;&#x2F;github.com&#x2F;ebfull&#x2F;seanbowe.com&#x2F;commits&#x2F;master&#x2F;content&#x2F;blog&#x2F;2026-09-04__disabling_sprout_the_right_way">[post history]</a></span>
+    
   </p>
   <div class="section-frame">
     <p>One of the five questions being asked as part of <a href="https://forum.zcashcommunity.com/t/nu7-coinholder-vote/56912">sentiment gathering</a> for
-Zcash's upcoming NU7 upgrade concerns the deprecation of <em>Sprout</em>, the original zk-SNARK protocol
+Zcash's upcoming NU7 upgrade concerns the deprecation of <em>Sprout</em>, the original shielded protocol
 that launched with Zcash back in 2016:</p>
 <blockquote>
 <p><strong>When should v4 transactions be disabled?</strong></p>
@@ -64,7 +66,7 @@ enforcing the same thing in Sprout without changing its circuit is tricky.</p>
 <h3 id="what-happens-to-the-funds"><a class="zola-anchor" href="#what-happens-to-the-funds" aria-label="Anchor link for: what-happens-to-the-funds">🔗</a>What happens to the funds?</h3>
 <p>The question of disabling <code>v4</code> transactions and suspending Sprout is, on its surface,
 completely orthogonal to what happens to Sprout user funds. The coinholder
-vote makes this clear:</p>
+vote makes this clear:<sup class="footnote-reference"><a href="#zip2003">1</a></sup></p>
 <blockquote>
 <p>The disposition of the affected funds is out of scope for this poll and is not specified here.</p>
 </blockquote>
@@ -103,7 +105,7 @@ it only requires a zk-SNARK proving knowledge of a small number of SHA256
 preimages. It does not require us to maintain the existing Merkle tree either; nodes
 can immediately purge that tree and its roots (anchors) from their state databases
 after <code>v4</code> transactions are disabled. The recovery protocol can use its own Merkle
-tree or some other accumulator instead, for performance.</p>
+tree or some other accumulator instead, for simplicity and performance.</p>
 <p>Interestingly, this makes it a limited kind of <em>quantum</em> recovery
 protocol, due to the heavy use of SHA256 in the original Sprout design. Something
 like this for Sapling would not be quantum recoverable. And so regardless of what
@@ -119,6 +121,10 @@ me, and we'll need to have more voting and debate about it in the coming months.
 But I'm increasingly convinced that the store-of-value case for Zcash requires
 us to make these funds recoverable for as long as possible, and <strong>I will be
 advocating for the recovery protocol path going forward.</strong></p>
+<hr />
+<div class="footnote-definition" id="zip2003"><sup class="footnote-definition-label">1</sup>
+<p>Indeed, Daira Hopwood points out that <a href="https://zips.z.cash/zip-2003">ZIP 2003</a> explicitly states: <em>"It is not proposed in this ZIP to unissue, burn, or otherwise make Sprout funds permanently unavailable. This leaves open the possibility of re-enabling v4 transactions, <strong>or of adding another facility to retrieve these funds</strong> if the Zcash community considers it worthwhile. However, since it is possible the ability to spend Sprout funds will never be re-enabled, holders of these funds should move them out of the Sprout pool without delay."</em></p>
+</div>
 
   </div>
 </section>
