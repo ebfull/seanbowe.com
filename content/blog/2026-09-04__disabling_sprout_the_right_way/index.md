@@ -4,12 +4,12 @@ authors = ["Sean Bowe"]
 
 [extra]
 page_justification = false
-page_history = false
-page_history_url = "https://github.com/ebfull/seanbowe.com/commits/master/content/blog/2026-09-04__deprecating_sprout_the_right_way"
+page_history = true
+page_history_url = "https://github.com/ebfull/seanbowe.com/commits/master/content/blog/2026-09-04__disabling_sprout_the_right_way"
 +++
 
 One of the five questions being asked as part of [sentiment gathering] for
-Zcash's upcoming NU7 upgrade concerns the deprecation of _Sprout_, the original zk-SNARK protocol
+Zcash's upcoming NU7 upgrade concerns the deprecation of _Sprout_, the original shielded protocol
 that launched with Zcash back in 2016:
 
 > **When should v4 transactions be disabled?**
@@ -46,7 +46,7 @@ enforcing the same thing in Sprout without changing its circuit is tricky.
 
 The question of disabling `v4` transactions and suspending Sprout is, on its surface,
 completely orthogonal to what happens to Sprout user funds. The coinholder
-vote makes this clear:
+vote makes this clear:[^zip2003]
 
 > The disposition of the affected funds is out of scope for this poll and is not specified here.
 
@@ -91,7 +91,7 @@ it only requires a zk-SNARK proving knowledge of a small number of SHA256
 preimages. It does not require us to maintain the existing Merkle tree either; nodes
 can immediately purge that tree and its roots (anchors) from their state databases
 after `v4` transactions are disabled. The recovery protocol can use its own Merkle
-tree or some other accumulator instead, for performance.
+tree or some other accumulator instead, for simplicity and performance.
 
 Interestingly, this makes it a limited kind of _quantum_ recovery
 protocol, due to the heavy use of SHA256 in the original Sprout design. Something
@@ -119,3 +119,7 @@ advocating for the recovery protocol path going forward.**
 [was identified and fixed]: https://shieldedlabs.net/zcash-vulnerability-successfully-remediated/
 [famous discovery]: https://electriccoin.co/blog/zcash-counterfeiting-vulnerability-successfully-remediated/
 [Zakura]: https://zakura.com/
+
+-----
+
+[^zip2003]: Indeed, Daira Hopwood points out that [ZIP 2003](https://zips.z.cash/zip-2003) explicitly states: _"It is not proposed in this ZIP to unissue, burn, or otherwise make Sprout funds permanently unavailable. This leaves open the possibility of re-enabling v4 transactions, **or of adding another facility to retrieve these funds** if the Zcash community considers it worthwhile. However, since it is possible the ability to spend Sprout funds will never be re-enabled, holders of these funds should move them out of the Sprout pool without delay."_
